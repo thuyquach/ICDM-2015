@@ -1,0 +1,199 @@
+---
+title: "ICDM 2015"
+author: "Thuy Quach"
+date: "July 16, 2015"
+output: html_document
+---
+
+This documents explores the data of the Kaggle competition: Drawnbrigde Cross-Device Connections ICDM 2015
+
+The Website of the Kaggle competition is https://www.kaggle.com/c/icdm-2015-drawbridge-cross-device-connections
+
+```{r Set dictionary}
+getwd()
+setwd("/Users/Thuy/Documents/ICDM 2015")
+list.files()
+```
+
+Install readr and xtable
+
+```{r, readr}
+install.packages('readr', repos="http://cran.rstudio.com/")
+install.packages('xtable', repos="http://cran.rstudio.com/")
+library(readr)
+library(xtable)
+
+```
+
+Install dplyr
+```{r}
+install.packages('dplyr',repos="http://cran.rstudio.com/")
+install.packages('ggplot2', repos="http://cran.rstudio.com/")
+install.packages('data.table', repos="http://cran.rstudio.com/")
+library(dplyr)
+library(ggplot2)
+library(data.table)
+  
+```
+
+# Load the data
+
+```{r}
+train <- read.csv("../ICDM 2015/dev_train_basic.csv")
+test <- read.csv("../ICDM 2015/dev_test_basic.csv")
+cookie <- read.csv("../ICDM 2015/cookie_all_basic.csv")
+```
+
+## Fix bad csv
+Three files (id_all_ip.csv, id_all_property.csv, and property_category.csv) don’t have to a valid CSV file format. We will fix it by writting new function.
+
+```{r Read bad csv}
+read_bad_csv <- function(file_name, bad_col=3, n_max=-1) {
+  f_in <- file(file_name)
+  lines <- readLines(f_in, n=n_max)
+  close(f_in)
+  temp_csv_1 <- tempfile()
+  f_out_1 <- file(temp_csv_1, "w")
+  writeLines(gsub("\\{|\\}", '"', lines), f_out_1)
+  close(f_out_1)
+  data <- read_csv(temp_csv_1, col_names=FALSE)
+  temp_csv_2 <- tempfile()
+  f_out_2 <- file(temp_csv_2, "w")
+  for (i in 1:nrow(data)) {
+    bad_lines <- strsplit(substr(data[i,bad_col], 2, nchar(data[i,bad_col])-1), "\\),\\(")[[1]]
+    if (bad_col==1) {
+      lines <- paste(bad_lines,
+                     paste0(as.character(data[i,2:ncol(data)]), collapse=","),
+                     sep=",")
+    } else if (bad_col<ncol(data)) {
+      lines <- paste(paste0(as.character(data[i,1:bad_col-1]), collapse=","),
+                     bad_lines,
+                     paste0(as.character(data[i,bad_col+1:ncol(data)]), collapse=","),
+                     sep=",")
+    } else {
+      lines <- paste(paste0(as.character(data[i,1:ncol(data)-1]), collapse=","),
+                     bad_lines,
+                     sep=",")
+    }
+  writeLines(lines, f_out_2)
+  }
+  close(f_out_2)
+  return(read_csv(temp_csv_2))
+}
+```
+
+## Load data with bad csv
+
+```{r}
+ip <- read_bad_csv("../ICDM 2015/id_all_ip.csv", bad_col=3, n_max=100)
+property <- read_bad_csv("../ICDM 2015/id_all_property.csv", bad_col = 3, n_max = 100)
+property_category <- read_bad_csv("../ICDM 2015/property_category.csv", bad_col=3, n_max=100)
+```
+
+# Summary of data set
+
+## Device train set
+
+```{r Train}
+dim(train)
+names(train)
+str(train)
+summary(train)
+head(train)
+```
+### Observation
+There are 1427770 devices in training set.
+
+
+### Visualization
+
+```{r Train Device-type}
+p1 <- train %>%
+  group_by(device_type) %>%
+  summarize(count=length(device_type)) %>%
+  ggplot(aes(x =device_type, y = count)) +
+    geom_bar(fill = "blue", stat = "identity")
+p1
+```
+
+## Device test set
+
+```{r Test}
+dim(test)
+names(test)
+str(test)
+summary(test)
+head(test)
+
+```
+### Observation
+
+### Visualization
+Device_type
+```{r Test device-type}
+p2 <- test %>%
+  group_by(device_type) %>%
+  summarize(count=length(device_type)) %>%
+  ggplot(aes(x =device_type, y = count)) +
+    geom_bar(fill = "black", stat = "identity")
+
+p2
+```
+
+```{r Test vs. Train Device_type}
+install.packages('gridExtra', repos="http://cran.rstudio.com/")
+library(gridExtra)
+grid.arrange(p1, p2)
+```
+
+##Cookies
+
+```{r Cookie}
+dim(cookie)
+names(cookie)
+str(cookie)
+summary(cookie)
+head(cookie)
+```
+### Observation
+There are 1555795 drawbridge_handle id.
+
+
+
+## Ip
+
+```{r Id all ip}
+dim(ip)
+names(ip)
+str(ip)
+summary(ip)
+head(ip)
+                   
+```
+### Observation
+
+## Property
+
+
+```{r Id all property}
+dim(property)
+names(property)
+str(property)
+summary(property)
+head(property)
+```
+### Observation
+
+## Property Category
+
+```{r Property category}
+dim(property_category )
+names(property_category )
+str(property_category )
+summary(property_category )
+head(property_category )
+
+```
+
+### Observation
+
